@@ -152,7 +152,55 @@ app.post("/api/contact", async (req, res) => {
 // ==============================
 // START SERVER
 // ==============================
+// ==========================================
+// PROTECTED ADMIN MESSAGES API
+// ==========================================
 
+app.get("/api/messages", async (req, res) => {
+
+  const apiKey = req.headers["x-api-key"];
+
+  // Check API key
+  if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
+
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized"
+    });
+
+  }
+
+  try {
+
+    const result = await pool.query(`
+      SELECT
+        id,
+        name,
+        email,
+        message,
+        created_at
+      FROM contacts
+      ORDER BY created_at DESC
+    `);
+
+    res.json({
+      success: true,
+      count: result.rows.length,
+      messages: result.rows
+    });
+
+  } catch (error) {
+
+    console.error("Messages error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Unable to retrieve messages."
+    });
+
+  }
+
+});
 app.listen(PORT, async () => {
 
   console.log(
