@@ -218,8 +218,112 @@ app.post("/api/contact", async (req, res) => {
 // PROTECTED ADMIN MESSAGES API
 // ==========================================
 
-app.get("/api/messages", async (req, res) => {
+// ==========================================
+// JWT AUTHENTICATION MIDDLEWARE
+// ==========================================
 
+function authenticateAdmin(req, res, next) {
+
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required."
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid authentication format."
+    });
+  }
+
+  try {
+
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
+
+    if (decoded.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required."
+      });
+    }
+
+    req.admin = decoded;
+
+    next();
+
+  } catch (error) {
+
+    return res.status(401).json({
+      success: false,
+      message: "Invalid or expired token."
+    });
+
+  }
+
+}
+
+
+// ==========================================
+// PROTECTED MESSAGES API
+// ==========================================
+
+app.get(
+  "/api/messages",
+  authenticateAdmin,
+  async (req, res) => {
+
+    try {
+
+      const result = await pool.query(`
+        SELECT
+          id,
+          name,
+          email,
+          message,
+          created_at
+        FROM contacts
+        ORDER BY created_at DESC
+      `);
+
+      res.json({
+
+        success: true,
+
+        count: result.rows.length,
+
+        messages: result.rows
+
+      });
+
+    } catch (error) {
+
+      console.error(
+        "Messages error:",
+        error
+      );
+
+      res.status(500).json({
+
+        success: false,
+
+        message:
+          "Unable to retrieve messages."
+
+      });
+
+    }
+
+  }
+);
   const apiKey = req.headers["x-api-key"];
 
   // Check API key
