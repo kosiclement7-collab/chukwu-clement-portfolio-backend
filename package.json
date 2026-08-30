@@ -1,0 +1,13 @@
+{
+  "name": "chukwu-clement-portfolio-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Chukwu Clement Portfolio",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
+  }
+}
