@@ -12,6 +12,67 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+// ==========================================
+// ADMIN AUTHENTICATION
+// ==========================================
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.warn("WARNING: JWT_SECRET is not configured.");
+}
+
+
+// ==========================================
+// ADMIN LOGIN
+// ==========================================
+
+app.post("/api/admin/login", (req, res) => {
+
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Username and password are required."
+    });
+  }
+
+  if (
+    username !== process.env.ADMIN_USERNAME ||
+    password !== process.env.ADMIN_PASSWORD
+  ) {
+    return res.status(401).json({
+      success: false,
+      message: "Invalid login details."
+    });
+  }
+
+  if (!JWT_SECRET) {
+    return res.status(500).json({
+      success: false,
+      message: "Authentication is not configured."
+    });
+  }
+
+  const token = jwt.sign(
+    {
+      username: username,
+      role: "admin"
+    },
+    JWT_SECRET,
+    {
+      expiresIn: "2h"
+    }
+  );
+
+  res.json({
+    success: true,
+    message: "Login successful.",
+    token: token
+  });
+
+});
 
 
 // ==============================
