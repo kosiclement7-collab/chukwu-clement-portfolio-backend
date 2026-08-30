@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
 // ==========================================
 // ADMIN AUTHENTICATION
 // ==========================================
@@ -21,7 +22,6 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   console.warn("WARNING: JWT_SECRET is not configured.");
 }
-
 
 // ==========================================
 // ADMIN LOGIN
@@ -74,7 +74,6 @@ app.post("/api/admin/login", (req, res) => {
 
 });
 
-
 // ==============================
 // POSTGRESQL
 // ==============================
@@ -85,7 +84,6 @@ const pool = new Pool({
     rejectUnauthorized: false
   }
 });
-
 
 // ==============================
 // CREATE CONTACTS TABLE
@@ -119,7 +117,6 @@ async function initializeDatabase() {
 
 }
 
-
 // ==============================
 // HOME ROUTE
 // ==============================
@@ -134,7 +131,6 @@ app.get("/", (req, res) => {
 
 });
 
-
 // ==============================
 // CONTACT FORM API
 // ==============================
@@ -147,21 +143,15 @@ app.post("/api/contact", async (req, res) => {
     message
   } = req.body;
 
-
   // Validation
   if (!name || !email || !message) {
 
     return res.status(400).json({
-
       success: false,
-
-      message:
-        "Please fill in your name, email and message."
-
+      message: "Please fill in your name, email and message."
     });
 
   }
-
 
   try {
 
@@ -178,16 +168,10 @@ app.post("/api/contact", async (req, res) => {
       ]
     );
 
-
     res.status(201).json({
-
       success: true,
-
-      message:
-        "Your message has been received successfully."
-
+      message: "Your message has been received successfully."
     });
-
 
   } catch (error) {
 
@@ -196,24 +180,15 @@ app.post("/api/contact", async (req, res) => {
       error
     );
 
-
     res.status(500).json({
-
       success: false,
-
-      message:
-        "Unable to save your message."
-
+      message: "Unable to save your message."
     });
 
   }
 
 });
 
-
-// ==============================
-// START SERVER
-// ==============================
 // ==========================================
 // PROTECTED ADMIN MESSAGES API
 // ==========================================
@@ -271,7 +246,6 @@ function authenticateAdmin(req, res, next) {
 
 }
 
-
 // ==========================================
 // PROTECTED MESSAGES API
 // ==========================================
@@ -295,13 +269,9 @@ app.get(
       `);
 
       res.json({
-
         success: true,
-
         count: result.rows.length,
-
         messages: result.rows
-
       });
 
     } catch (error) {
@@ -312,61 +282,19 @@ app.get(
       );
 
       res.status(500).json({
-
         success: false,
-
-        message:
-          "Unable to retrieve messages."
-
+        message: "Unable to retrieve messages."
       });
 
     }
 
   }
 );
-  const apiKey = req.headers["x-api-key"];
 
-  // Check API key
-  if (!apiKey || apiKey !== process.env.ADMIN_API_KEY) {
+// ==============================
+// START SERVER
+// ==============================
 
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized"
-    });
-
-  }
-
-  try {
-
-    const result = await pool.query(`
-      SELECT
-        id,
-        name,
-        email,
-        message,
-        created_at
-      FROM contacts
-      ORDER BY created_at DESC
-    `);
-
-    res.json({
-      success: true,
-      count: result.rows.length,
-      messages: result.rows
-    });
-
-  } catch (error) {
-
-    console.error("Messages error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Unable to retrieve messages."
-    });
-
-  }
-
-});
 app.listen(PORT, async () => {
 
   console.log(
