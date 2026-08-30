@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const Database = require("better-sqlite3");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -8,41 +9,121 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Home / API test
+// ==============================
+// DATABASE
+// ==============================
+
+const db = new Database("contacts.db");
+
+// Create contacts table
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS contacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    message TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`).run();
+
+
+// ==============================
+// HOME ROUTE
+// ==============================
+
 app.get("/", (req, res) => {
+
   res.json({
     success: true,
-    message: "Chukwu Clement Portfolio Backend is running"
+    message: "Chukwu Clement Portfolio Backend is running",
+    database: "Connected"
   });
+
 });
 
-// Contact form API
+
+// ==============================
+// CONTACT FORM
+// ==============================
+
 app.post("/api/contact", (req, res) => {
+
   const { name, email, message } = req.body;
 
-  // Validate form
+
+  // Validation
   if (!name || !email || !message) {
+
     return res.status(400).json({
+
       success: false,
+
       message: "Please fill in all fields."
+
     });
+
   }
 
-  // For now, display the message in the server logs
-  console.log("New Contact Message:");
-  console.log({
-    name,
-    email,
-    message
-  });
 
-  res.status(200).json({
-    success: true,
-    message: "Your message has been received successfully."
-  });
+  try {
+
+    // Save contact message
+    const statement = db.prepare(`
+      INSERT INTO contacts
+      (name, email, message)
+      VALUES (?, ?, ?)
+    `);
+
+
+    statement.run(
+      name,
+      email,
+      message
+    );
+
+
+    console.log("New contact message saved.");
+
+
+
+    res.status(200).json({
+
+      success: true,
+
+      message: "Your message has been received successfully."
+
+    });
+
+
+  } catch (error) {
+
+    console.error(
+      "Database error:",
+      error
+    );
+
+
+    res.status(500).json({
+
+      success: false,
+
+      message: "Unable to save your message."
+
+    });
+
+  }
+
 });
 
-// Start server
+
+// ==============================
+// START SERVER
+// ==============================
+
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+
+  console.log(
+    `Server running on port ${PORT}`
+  );
+
 });
