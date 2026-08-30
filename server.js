@@ -1,30 +1,61 @@
 const express = require("express");
 const cors = require("cors");
-const Database = require("better-sqlite3");
+const { Pool } = require("pg");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
+// ==============================
+// MIDDLEWARE
+// ==============================
+
 app.use(cors());
 app.use(express.json());
 
+
 // ==============================
-// DATABASE
+// POSTGRESQL
 // ==============================
 
-const db = new Database("contacts.db");
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
-// Create contacts table
-db.prepare(`
-  CREATE TABLE IF NOT EXISTS contacts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    message TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`).run();
+
+// ==============================
+// CREATE CONTACTS TABLE
+// ==============================
+
+async function initializeDatabase() {
+
+  try {
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS contacts (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    console.log("PostgreSQL database connected.");
+    console.log("Contacts table ready.");
+
+  } catch (error) {
+
+    console.error(
+      "Database initialization error:",
+      error
+    );
+
+  }
+
+}
 
 
 // ==============================
@@ -36,19 +67,23 @@ app.get("/", (req, res) => {
   res.json({
     success: true,
     message: "Chukwu Clement Portfolio Backend is running",
-    database: "Connected"
+    database: "PostgreSQL"
   });
 
 });
 
 
 // ==============================
-// CONTACT FORM
+// CONTACT FORM API
 // ==============================
 
-app.post("/api/contact", (req, res) => {
+app.post("/api/contact", async (req, res) => {
 
-  const { name, email, message } = req.body;
+  const {
+    name,
+    email,
+    message
+  } = req.body;
 
 
   // Validation
@@ -58,7 +93,8 @@ app.post("/api/contact", (req, res) => {
 
       success: false,
 
-      message: "Please fill in all fields."
+      message:
+        "Please fill in your name, email and message."
 
     });
 
@@ -67,30 +103,26 @@ app.post("/api/contact", (req, res) => {
 
   try {
 
-    // Save contact message
-    const statement = db.prepare(`
+    await pool.query(
+      `
       INSERT INTO contacts
       (name, email, message)
-      VALUES (?, ?, ?)
-    `);
-
-
-    statement.run(
-      name,
-      email,
-      message
+      VALUES ($1, $2, $3)
+      `,
+      [
+        name,
+        email,
+        message
+      ]
     );
 
 
-    console.log("New contact message saved.");
-
-
-
-    res.status(200).json({
+    res.status(201).json({
 
       success: true,
 
-      message: "Your message has been received successfully."
+      message:
+        "Your message has been received successfully."
 
     });
 
@@ -98,7 +130,7 @@ app.post("/api/contact", (req, res) => {
   } catch (error) {
 
     console.error(
-      "Database error:",
+      "Contact database error:",
       error
     );
 
@@ -107,7 +139,8 @@ app.post("/api/contact", (req, res) => {
 
       success: false,
 
-      message: "Unable to save your message."
+      message:
+        "Unable to save your message."
 
     });
 
@@ -120,10 +153,12 @@ app.post("/api/contact", (req, res) => {
 // START SERVER
 // ==============================
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
 
   console.log(
     `Server running on port ${PORT}`
   );
+
+  await initializeDatabase();
 
 });
