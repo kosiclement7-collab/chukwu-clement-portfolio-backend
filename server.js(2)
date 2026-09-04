@@ -1,4 +1,5 @@
-const authRoutes = require('./routes/auth');
+const migrate = require('./migrate');
+migrate().catch(err => console.error('Migration failed:', err));const authRoutes = require('./routes/auth');
 const entriesRoutes = require('./routes/entries');
 
 app.use('/api/auth', authRoutes);
