@@ -1,4 +1,8 @@
-const migrate = require('./migrate');
+const migrate = require('./migrate');const cors = require('cors');
+
+// During testing, allow all origins. Once your frontend has a permanent
+// home (GitHub Pages, custom domain, etc.), tighten this to just that URL.
+app.use(cors());
 migrate().catch(err => console.error('Migration failed:', err));const authRoutes = require('./routes/auth');
 const entriesRoutes = require('./routes/entries');
 
